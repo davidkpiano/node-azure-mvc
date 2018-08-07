@@ -1,12 +1,11 @@
 import express from 'express';
+import moviesRouter from './routers/MoviesRouter';
 
 // Creates a new Express app instance
 const app = express();
 
-// Configures the http://localhost:5000/ route to send a text response
-app.get('/', (req, res) => {
-    res.send('Hello, world!');
-});
+// Handles /movies routes
+app.use('/movies', moviesRouter);
 
 // Starts the app on port 5000, then calls the callback when
 // the app successfully starts.
