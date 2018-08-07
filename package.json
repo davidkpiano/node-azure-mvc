@@ -1,0 +1,30 @@
+{
+    "name": "azure-mvc",
+    "version": "1.0.0",
+    "description": "Example application for creating an MVC Express + Node + TypeScript app and deploying it to Azure",
+    "main": "index.js",
+    "scripts": {
+        "start": "npm run serve",
+        "serve": "node dist/index.js",
+        "build-ts": "tsc",
+        "watch-ts": "tsc --watch",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/davidkpiano/node-azure-mvc.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/davidkpiano/node-azure-mvc/issues"
+    },
+    "homepage": "https://github.com/davidkpiano/node-azure-mvc#readme",
+    "dependencies": {
+        "express": "^4.16.3"
+    },
+    "devDependencies": {
+        "@types/express": "^4.16.0",
+        "typescript": "^3.0.1"
+    }
+}
