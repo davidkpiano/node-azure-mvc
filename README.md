@@ -5,6 +5,7 @@ Example application for creating an MVC Express + Node + TypeScript app and depl
 - [What is TypeScript?](#what-is-typescript)
 - [Project Setup](#project-setup)
 - [Hello World](#hello-world)
+- [Add a controller](#add-a-controller)
 
 ## Getting Started
 
@@ -116,6 +117,9 @@ src/
 ├─ models/
 │  ├─ UserModel.ts
 |  └─ GoatModel.ts
+├─ routers/
+│  ├─ UsersRouter.ts
+|  └─ GoatsRouter.ts
 ├─ views/
 │  ├─ index.pug
 │  ├─ users.pug
@@ -140,7 +144,10 @@ Now that our project is set up, let's set up a simple running Node + Express + T
 import express from 'express';
 ```
 
-<details><summary>ℹ️ Compare TS imports to C#</summary>
+<details>
+  <summary>ℹ️ Compare TS imports to C#</summary>
+  <br />
+  
 In JavaScript/TypeScript, external references to variables/functions/etc. must be explicitly imported and referenced. This is different than C#, where you would use the `using` directive to reference external namespaces.
 
 For example, in C#, the `ReadAllText` function is implicitly available from `using System.IO.File`:
@@ -180,6 +187,7 @@ export class ReadFromFile {
     }
 }
 ```
+---
 </details>
 <br />
 
@@ -257,4 +265,87 @@ To break these down:
 Now, you can run the below command to run your Node app:
 ```bash
 npm run build-ts && npm start
+```
+
+## Add a controller
+
+Although Express is unopinionated, a common architectural pattern to implementing web apps and APIs is MVC (**M**model **V**iew **C**ontroller), which will be familiar to you if you have experience with [ASP.NET MVC](https://docs.microsoft.com/en-us/aspnet/core/mvc/overview?view=aspnetcore-2.1#what-is-the-mvc-pattern). We'll be creating our application using the same architecture, with these responsibilities:
+
+- **Models** will be responsible for fetching, modifying, and storing data that the app will use. They'll connect to the database(s), external APIs, and other data sources that our app might need.
+  - e.g., `src/models/UserModel.ts`
+- **Views** will be used for displaying the app's UI. With single-page apps (SPAs), views will remain mostly static, as the app will be used in a RESTful way.
+  - e.g., `src/views/users.pug`
+- **Controllers** will handle requests, make calls to the necessary models to fetch/update data, and respond with a representation of that data -- which can be an HTML response (with MVC apps), a JSON response (RESTful API + SPA), a status code response, etc.
+  - e.g., `src/controllers/UsersController.ts`
+- **Routers** will map URLs to controller request handlers.
+  - e.g., `src/routers/UsersRouter.ts`
+
+Create `src/controllers/MoviesController.ts`:
+
+```ts
+// Reference the Request and Response types from express
+import { Request, Response } from 'express';
+
+export function index(req: Request, res: Response) {
+    res.send('This is my default response..');
+}
+
+export function getWelcome(req: Request, res: Response) {
+    res.send('This is my welcome response...');
+}
+```
+
+<details>
+  <summary>ℹ️ Where's the class? Compare TS to C#</summary>
+  <br />
+  In [ASP.NET MVC](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mvc-app/adding-controller?view=aspnetcore-2.1), you would be `using Microsoft.AspNetCore.MVC` to inherit from its `Controller` base class to create the controller. This has the advantages of automatically mapping to the default `/[Controller]/[ActionName]/[Parameters]` route logic in an ASP.NET MVC app.
+  
+  However, since Express is unopinionated, we will just be `export`-ing the request handler functions, for use in the routers. These functions don't `return` anything, but instead they call `res.send(...)` to send the response with the given `body` (in this case, plain text).
+  
+  Since they are just functions, they don't need a class to group them. "Namespacing" is taken care of by importing entire modules using the `import * as someVariable from '/some/path'`:
+  
+  ```ts
+  // Places the exported { index, getWelcome } functions into moviesController
+  import * as moviesController from '../controllers/MoviesController';
+  
+  moviesController.index // function
+  moviesController.getWelcome // function
+  ```
+  
+  This is the idiomatic way to group related variables and functions into a single module in TS/JS, without the use of an explicit `namespace` or `class`.
+  
+  ---
+</details>
+<br />
+
+Now create `src/routers/MoviesRouter.ts` to group these route handlers to actual routes:
+
+```ts
+import { Router } from 'express';
+import * as moviesController from '../controllers/MoviesController';
+
+// Create a new router to handle /movies routes
+const moviesRouter = Router();
+
+// GET /movies/
+moviesRouter.get('/', moviesController.index);
+
+// GET /movies/welcome
+moviesRouter.get('/welcome', moviesController.getWelcome);
+
+export default moviesRouter;
+```
+
+To connect this router to the app, use [`app.use()`](https://expressjs.com/en/4x/api.html#app.use) to configure the app and tell Express that whenever an incoming request's URL matches `/movies`, use the `moviesRouter` to handle the request.
+
+```diff
+...
+
+// Creates a new Express app instance
+const app = express();
+
++ // Handles /movies routes
++ app.use('/movies', moviesRouter);
+
+...
 ```
