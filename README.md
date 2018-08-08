@@ -372,6 +372,8 @@ Here's what's happening when each request (e.g., `http://localhost:5000/movies/w
 - `moviesController.getWelcome(req, res)` receives the request and response, and...
 - Finally, that `getWelcome(req, res)` function calls `res.send(...)`, which sends the response and ends the request/response cycle.
 
+### Query parameters
+
 Modify the code to pass some query parameter data from the URL to the controller. For example, `http://localhost:5000/movies/welcome?name=David&numTimes=4`. Change the `getWelcome` method to read from the query data:
 
 ```ts
@@ -409,6 +411,8 @@ export function getWelcome(req: Request, res: Response) {
   
   console.log(two, four); // 2 4
   ```
+  
+  ---
 </details>
 
 <details>
@@ -429,4 +433,150 @@ export function getWelcome(req: Request, res: Response) {
   ```
   
   These are called **template literals**. More info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+  
+  ---
 </details>
+
+Compile and run the app (`npm run build-ts && npm start`) and navigate to http://localhost:5000/movies/welcome?name=David&numTimes=4 . You can try different values for `name` and `numTimes`.
+
+### Route parameters
+
+For parameters defined directly on the route, you can use [route parameters](https://expressjs.com/en/guide/routing.html#route-parameters) in Express. To define a route parameter, use the colon (`:`) prefix on the route:
+
+```ts
+// src/routers/MoviesRouter.ts
+// ...
+
+// GET /movies/welcome
+// Add the /:id route parameter
+// This will add the 'id' property to req.params
+moviesRouter.get('/welcome/:id', moviesController.getWelcome);
+```
+
+The route parameters will be placed on the `req.params` object, which you can handle in the controller:
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export function getWelcome(req: Request, res: Response) {
+    const { id } = req.params; // the 'id' param that was just added
+    const { name } = req.query;
+
+    res.send(`Hello ${name}, ID is: ${id}`);
+}
+```
+
+Now if you navigate to http://localhost:5000/movies/welcome/42?name=David , you should see:
+
+```
+Hello David, ID is: 42
+```
+
+## Add a view
+
+There are a few different types of JavaScript [template engines](https://expressjs.com/en/guide/using-template-engines.html) which let you interpolate dynamic data into static views. This is useful if you don't want to create a full <abbr title="single-page application">SPA</abbr>.
+
+However, in this tutorial, we're going to use [Express React views](https://github.com/reactjs/express-react-views), which is a "view engine which renders React components on the server." This is helpful if you want to use React in the future, learn it, or avoid deviating from the normal HTML syntax while still maintaining the full expressivity of JS.
+
+Install these three modules (and their types):
+- `express-react-views` - the template engine for Express to understand `.jsx` files
+  - Note: you don't need to install types for this since it's implicitly loaded by Express
+- `react` - the framework for creating React components
+- `react-dom` - parses React components and outputs them as HTML
+
+```bash
+# install the modules
+npm install express-react-views react react-dom --save
+# install the types
+npm install @types/react @types/react-dom --save-dev
+```
+
+```ts
+// src/index.ts
+// ...
+import * as path from 'path';
+
+// Creates a new Express app instance
+const app = express();
+
+// Sets up the view engine
+app.set('views', path.join(__dirname, '/src/views'));
+app.set('view engine', 'jsx');
+app.engine('jsx', require('express-react-views').createEngine());
+
+// ...
+```
+
+<details>
+  <summary>ℹ️ What is __dirname?</summary>
+  
+  [`__dirname` is a global variable](https://nodejs.org/docs/latest/api/modules.html#modules_dirname) in Node, and it refers to the directory name of the current _module_ (not of the current file). 
+  
+  ```ts
+  path.join(__dirname, '/src/views');
+  // will join '/the/path/to/your/project' and '/src/views'
+  ```
+  
+  ---
+</details>
+
+### Adding the TSX (JSX) view
+
+With the above configuration, views rendered from `res.render('path/to/view')` will be:
+1. resolved from the `'views'` path (in this case, `/src/views`)
+2. compiled through the view engine (in this case, `'express-react-views'`)
+3. sent as an HTML response.
+
+Let's make an index view for our `/movies/` route. We will render from `res.render('movies/index')`, so create `src/views/movies/index.tsx`:
+
+```tsx
+// src/views/movies/index.tsx
+import * as React from 'react';
+
+interface IMoviesViewProps {
+    title: string;
+}
+
+class MoviesView extends React.Component<IMoviesViewProps> {
+    render() {
+        return (
+            <div>
+                <h2>Index</h2>
+                <p>Hello from our MoviesView component!</p>
+            </div>
+        );
+    }
+}
+
+export default MoviesView;
+```
+
+<details>
+  <summary>ℹ️ Do I see an interface? Compare C# to TS</summary>
+  <br />
+  Yes! in TypeScript, [interfaces](https://www.typescriptlang.org/docs/handbook/interfaces.html) are similar to C# interfaces. They're defined with the same `interface` keyword, and they do support generics.
+  
+  ```cs
+  // C#
+  interface IMoviesViewProps
+  {
+      string title
+      {
+          get;
+      }
+  }
+  ```
+  
+  ```ts
+  interface IMoviesViewProps {
+      readonly title: string;
+  }
+  ```
+  
+  Note the difference on where the type is defined. In ES6/TS, all variables are defined with `var`, `let`, or `const`, so types are defined _after_ the variable in TS (e.g., `const title: string = 'some title';`).
+  
+  ---
+</details>
+
+
