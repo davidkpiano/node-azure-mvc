@@ -298,6 +298,7 @@ export function getWelcome(req: Request, res: Response) {
 <details>
   <summary>ℹ️ Where's the class? Compare TS to C#</summary>
   <br />
+  
   In [ASP.NET MVC](https://docs.microsoft.com/en-us/aspnet/core/tutorials/first-mvc-app/adding-controller?view=aspnetcore-2.1), you would be `using Microsoft.AspNetCore.MVC` to inherit from its `Controller` base class to create the controller. This has the advantages of automatically mapping to the default `/[Controller]/[ActionName]/[Parameters]` route logic in an ASP.NET MVC app.
   
   However, since Express is unopinionated, we will just be `export`-ing the request handler functions, for use in the routers. These functions don't `return` anything, but instead they call `res.send(...)` to send the response with the given `body` (in this case, plain text).
