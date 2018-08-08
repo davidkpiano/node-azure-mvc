@@ -5,5 +5,7 @@ export function index(req: Request, res: Response) {
 }
 
 export function getWelcome(req: Request, res: Response) {
-    res.send('This is my welcome response...');
+    const { name, numTimes } = req.query;
+
+    res.send(`Hello ${name}, numTimes is: ${numTimes}`);
 }
