@@ -112,13 +112,13 @@ Here's what our overall folder structure will look like:
 ```
 src/
 ├─ controllers/
-│  ├─ UsersController.ts
+│  ├─ MoviesController.ts
 |  └─ GoatsController.ts
 ├─ models/
-│  ├─ UserModel.ts
+│  ├─ MovieModel.ts
 |  └─ GoatModel.ts
 ├─ routers/
-│  ├─ UsersRouter.ts
+│  ├─ MoviesRouter.ts
 |  └─ GoatsRouter.ts
 ├─ views/
 │  ├─ index.pug
@@ -138,9 +138,11 @@ When TypeScript compiles this app, it will recursively compile all `.ts` files w
 
 ## Hello World
 
-Now that our project is set up, let's set up a simple running Node + Express + TypeScript app. Import the `express` package in `index.ts`:
+Now that our project is set up, let's set up a simple running Node + Express + TypeScript app. Import the `express` package in `src/index.ts`:
 
 ```ts
+// src/index.ts
+
 import express from 'express';
 ```
 
@@ -194,6 +196,8 @@ export class ReadFromFile {
 Following the [hello world guide in the Express docs](https://expressjs.com/en/starter/hello-world.html), continue creating the app:
 
 ```ts
+// src/index.ts
+
 import express from 'express';
 
 // Creates a new Express app instance
@@ -322,6 +326,8 @@ export function getWelcome(req: Request, res: Response) {
 Now create `src/routers/MoviesRouter.ts` to group these route handlers to actual routes:
 
 ```ts
+// src/routers/MovieRouter.ts
+
 import { Router } from 'express';
 import * as moviesController from '../controllers/MoviesController';
 
@@ -339,14 +345,88 @@ export default moviesRouter;
 
 To connect this router to the app, use [`app.use()`](https://expressjs.com/en/4x/api.html#app.use) to configure the app and tell Express that whenever an incoming request's URL matches `/movies`, use the `moviesRouter` to handle the request.
 
-```diff
-...
+```ts
+// src/index.ts
 
-// Creates a new Express app instance
+// ...
 const app = express();
 
-+ // Handles /movies routes
-+ app.use('/movies', moviesRouter);
+// Handles /movies routes
+app.use('/movies', moviesRouter); // << Add this line
 
-...
+// ...
 ```
+
+The `app.use(...)` method is a way to mount [middleware](https://expressjs.com/en/guide/using-middleware.html) for the specified path (in this case, `'/movies'`). You can think of Express routers as middleware, since they intercept the requests matching that URL, make changes to the request/response objects, and (in this case) end the request/response cycle by calling `res.send(...)` or `res.end(...)`.
+
+Now compile and run the app and visit http://localhost:5000/movies/ and http://localhost:5000/movies/welcome. You'll see the correct responses for each of the routes.
+
+```bash
+npm run build-ts && npm start
+```
+
+Here's what's happening when each request (e.g., `http://localhost:5000/movies/welcome`) is made:
+- The `app` listens for the request
+- Request URL matches `'/movies'`, so the request is sent to the `moviesRouter` middleware (defined in `src/routers/MoviesRouter.ts`)
+- The URL sub-path matches `'/welcome'` and the request method matches `GET`, so `moviesController.getWelcome` handles the request (defined in `src/controllers/MoviesController.ts`)
+- `moviesController.getWelcome(req, res)` receives the request and response, and...
+- Finally, that `getWelcome(req, res)` function calls `res.send(...)`, which sends the response and ends the request/response cycle.
+
+Modify the code to pass some query parameter data from the URL to the controller. For example, `http://localhost:5000/movies/welcome?name=David&numTimes=4`. Change the `getWelcome` method to read from the query data:
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export function getWelcome(req: Request, res: Response) {
+    const { name, numTimes } = req.query;
+
+    res.send(`Hello ${name}, numTimes is: ${numTimes}`);
+}
+```
+
+<details>
+  <summary>ℹ️ What's the weird variable bracket syntax? Destructuring in TS</summary>
+  
+  In ES6, variables can be "destructured" from an object or an array (see the [MDN docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment#Object_destructuring) for more info and use cases). So:
+  
+  ```ts
+  // req.query is an object, e.g., { name: 'David', numTimes: 4 }
+  const { name, numTimes } = req.query;
+  
+  // is the same as
+  const name = req.query.name;
+  const numTimes = req.query.numTimes;
+  ```
+  
+  In C#, this idea is called [deconstructing](https://docs.microsoft.com/en-us/dotnet/csharp/deconstruct), and (at the time of writing) only works for tuples and user-defined types.
+  
+  You can also destructure arrays in ES6 as well:
+  
+  ```ts
+  const numbers = [1, 2, 3, 4];
+  const [_, two, __, four] = numbers;
+  
+  console.log(two, four); // 2 4
+  ```
+</details>
+
+<details>
+  <summary>ℹ️ String interpolation: C# vs TS</summary>
+  
+  In ES6, backticks are used to interpolate expressions in strings. This is similar to the `$` special character in C#:
+  
+  ```cs
+  // C#
+  var str = $"Hello {name}, numTimes is: {numTimes}";
+  ```
+  
+  Expressions are interpolated inside the backticked string via the `${ expr }` syntax:
+  
+  ```ts
+  // ES6
+  const str = `Hello ${name}, numTimes is: ${numTimes}`;
+  ```
+  
+  These are called **template literals**. More info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
+</details>
