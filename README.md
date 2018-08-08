@@ -417,6 +417,7 @@ export function getWelcome(req: Request, res: Response) {
 
 <details>
   <summary>ℹ️ String interpolation: C# vs TS</summary>
+  <br />
   
   In ES6, backticks are used to interpolate expressions in strings. This is similar to the `$` special character in C#:
   
@@ -436,6 +437,7 @@ export function getWelcome(req: Request, res: Response) {
   
   ---
 </details>
+<br />
 
 Compile and run the app (`npm run build-ts && npm start`) and navigate to http://localhost:5000/movies/welcome?name=David&numTimes=4 . You can try different values for `name` and `numTimes`.
 
@@ -510,6 +512,7 @@ app.engine('jsx', require('express-react-views').createEngine());
 
 <details>
   <summary>ℹ️ What is __dirname?</summary>
+  <br />
   
   [`__dirname` is a global variable](https://nodejs.org/docs/latest/api/modules.html#modules_dirname) in Node, and it refers to the directory name of the current _module_ (not of the current file). 
   
@@ -520,6 +523,7 @@ app.engine('jsx', require('express-react-views').createEngine());
   
   ---
 </details>
+<br/>
 
 ### Adding the TSX (JSX) view
 
@@ -527,6 +531,23 @@ With the above configuration, views rendered from `res.render('path/to/view')` w
 1. resolved from the `'views'` path (in this case, `/src/views`)
 2. compiled through the view engine (in this case, `'express-react-views'`)
 3. sent as an HTML response.
+
+Before we start, we need to make one quick config change to `tsconfig.json`. Add `"jsx": "preserve"` to `"compilerOptions"`:
+
+```js
+// tsconfig.json
+
+{
+    "compilerOptions": {
+        ...
+        "jsx": "preserve",
+        ...
+    },
+    ...
+}
+```
+
+This will tell the TypeScript compiler to preserve the JSX output when compiling it. That is, instead of compiling as `React.createElement('Something', ...)`, it will compile as the original `<Something ...>`. More info: https://www.typescriptlang.org/docs/handbook/jsx.html
 
 Let's make an index view for our `/movies/` route. We will render from `res.render('movies/index')`, so create `src/views/movies/index.tsx`:
 
@@ -555,6 +576,7 @@ export default MoviesView;
 <details>
   <summary>ℹ️ Do I see an interface? Compare C# to TS</summary>
   <br />
+  
   Yes! in TypeScript, [interfaces](https://www.typescriptlang.org/docs/handbook/interfaces.html) are similar to C# interfaces. They're defined with the same `interface` keyword, and they do support generics.
   
   ```cs
@@ -578,5 +600,21 @@ export default MoviesView;
   
   ---
 </details>
+<br />
 
+Now let's modify the `index` handler on the `MoviesController.ts`:
 
+```ts
+// src/controllers/MoviesController.ts
+import { Request, Response } from 'express';
+
+export function index(req: Request, res: Response) {
+    // The second argument ({ title: ... }) will be passed to the view engine,
+    // which will pass the data to the React component as props.
+    res.render('movies/index', { title: 'Movies' });
+}
+
+// ...
+```
+
+Build and run the app, navigate to http://localhost:5000/movies/, and you should see the rendered view, saying "Hello from our MoviesView component!".
