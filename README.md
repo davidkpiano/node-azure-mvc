@@ -618,3 +618,71 @@ export function index(req: Request, res: Response) {
 ```
 
 Build and run the app, navigate to http://localhost:5000/movies/, and you should see the rendered view, saying "Hello from our MoviesView component!".
+
+### Adding a layout
+
+With React, you create [components](https://reactjs.org/docs/react-component.html) which can be composed together. This is helpful when creating layouts. Let's create a base HTML page layout in `src/layouts/base.tsx`:
+
+```ts
+// src/layouts/base.tsx
+import * as React from 'react';
+
+interface IBaseLayoutProps {
+    title: string;
+}
+
+class BaseLayout extends React.Component<IBaseLayoutProps> {
+    render() {
+        return (
+            <html>
+                <head>
+                    <title>{this.props.title}</title>
+                </head>
+                <body>
+                    <header>
+                        <h1>{this.props.title} - Movie App</h1>
+                    </header>
+                    <main>{this.props.children}</main>
+                </body>
+            </html>
+        );
+    }
+}
+
+export default BaseLayout;
+```
+
+The interpolated `{this.props.children}` variable contains the child elements that are passed into the `<BaseLayout>` component. We can import `BaseLayout` and use it in the `MoviesView`:
+
+```tsx
+import * as React from 'react';
+import BaseLayout from '../layouts/base';
+
+interface IMoviesViewProps {
+    title: string;
+}
+
+class MoviesView extends React.Component<IMoviesViewProps> {
+    render() {
+        return (
+            <BaseLayout title={this.props.title}>
+                <h2>Index</h2>
+                <p>Hello from our MoviesView component!</p>
+            </BaseLayout>
+        );
+    }
+}
+
+export default MoviesView;
+```
+
+You should see the "Movies - Movie App" text (from our interpolated `"Movies"` title) as well as the content of the `<MoviesView>` component. Here's what's happening:
+
+1. The Movies controller (`src/controllers/MoviesController.ts`) passes the `{ title: 'Movies' }` props into the `'movies/index'` view via `res.render('movies/index', { title: 'Movies' })`
+2. The view engine maps that view path to `views/movies/index.tsx` and passes the props into the `<MoviesView>` component
+  - i.e., `<MoviesView title="Movies" />`
+3. The `<MoviesView>` component renders the `<BaseLayout>` component and passes its received `title` prop into it via `this.props.title`
+  - i.e., `<BaseLayout title={this.props.title}>` which becomes `<BaseLayout title={"Movies"}>`
+4. The `<BaseLayout>` component renders its view, which recursively renders all its child views.
+
+
