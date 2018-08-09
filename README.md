@@ -680,9 +680,97 @@ You should see the "Movies - Movie App" text (from our interpolated `"Movies"` t
 
 1. The Movies controller (`src/controllers/MoviesController.ts`) passes the `{ title: 'Movies' }` props into the `'movies/index'` view via `res.render('movies/index', { title: 'Movies' })`
 2. The view engine maps that view path to `views/movies/index.tsx` and passes the props into the `<MoviesView>` component
-  - i.e., `<MoviesView title="Movies" />`
+    - i.e., `<MoviesView title="Movies" />`
 3. The `<MoviesView>` component renders the `<BaseLayout>` component and passes its received `title` prop into it via `this.props.title`
-  - i.e., `<BaseLayout title={this.props.title}>` which becomes `<BaseLayout title={"Movies"}>`
+    - i.e., `<BaseLayout title={this.props.title}>` which becomes `<BaseLayout title={"Movies"}>`
 4. The `<BaseLayout>` component renders its view, which recursively renders all its child views.
 
+## Add a model
 
+In a real app, the data that the controller retrieves, which is then passed to the view, usually comes from a data store somewhere, whether that's via an external API or a database. We're going to use MongoDB and Mongoose to create our models:
+
+- [MongoDB](https://docs.mongodb.com/manual/introduction/) is "an open-source document database that provides high performance, high availability, and automatic scaling." Sounds similar to CosmosDB? You're right, but more on that later.
+- [Mongoose](http://mongoosejs.com/) helps you create, update, and validate model schemas for MongoDB. 
+
+First install Mongoose and its types:
+
+```bash
+npm install mongoose --save
+npm install @types/mongoose --save-dev
+```
+
+Now create a `Movie` model in `src/models/Movie.ts`. This will be responsible for creating, updating, deleting, querying, etc. our movies.
+
+```ts
+import { Schema, model } from 'mongoose';
+
+// Create Movie schema
+const MovieSchema = new Schema({
+    title: String,
+    releaseDate: Date,
+    genre: String,
+    price: Number
+});
+
+// Create Movie model
+const Movie = model('Movie', MovieSchema);
+
+export default Movie;
+```
+
+Before we go further, we need an actual MongoDB database to store our data. Follow [the MongoDB installation steps](https://docs.mongodb.com/manual/installation/#tutorial-installation) and then run the `mongod` process. You should see terminal output that includes the line:
+
+```
+[initandlisten] waiting for connections on port 27017
+```
+
+To [connect Mongoose to MongoDB](http://mongoosejs.com/docs/connections.html), we'll call `mongoose.connect(...)`. Since this is an app-specific call, put it in `index.ts` for now.
+
+```ts
+// src/index.ts
+// ...
+import { connect } from 'mongoose';
+
+// Connect the database
+// We'll remove the hardcoded URL later.
+const mongoUrl = 'mongodb://127.0.0.1:27017/moviesapp';
+connect(mongoUrl)
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch(err => {
+        console.error('MongoDB connection error:', err);
+    });
+
+// ...
+```
+
+<details>
+  <summary>ℹ️ What is that then/catch pattern? Promises in TS vs. Tasks in C#</summary>
+  <br/>
+  
+  A [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) is a pattern for doing asynchronous programming in JS. It represents something that happens over time, and either _resolves_ or _rejects_. The callbacks provided for a resolved or rejected promise are `.then(resolvedCallback)` or `.catch(rejectedCallback)`, respectively.
+  
+  A near-equivalent in C# are [Tasks](https://docs.microsoft.com/en-us/dotnet/csharp/async). What's interesting to note is that, in TypeScript, the `async/await` model can be used for promises as well, so in an async function, the above code can be written as:
+  
+  ```ts
+  async function connectToDatabase(url) {
+      try {
+          // This would be e.g.,
+          // const response = await connect(url);
+          // but in this case, it resolves with undefined.
+          await connect(url);
+          console.log('Connected to database');
+      } catch(err) {
+          console.error('MongoDB connection error: ', err);
+      }
+  }
+  
+  // in another async function, this can be await-ed as well
+  connectToDatabase(mongoUrl);
+  ```
+  
+  More info: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+  ---
+</details>
+<br />
