@@ -8,6 +8,6 @@ const moviesRouter = Router();
 moviesRouter.get('/', moviesController.index);
 
 // GET /movies/welcome
-moviesRouter.get('/welcome', moviesController.getWelcome);
+moviesRouter.get('/welcome/:id', moviesController.getWelcome);
 
 export default moviesRouter;
