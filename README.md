@@ -861,3 +861,83 @@ And go ahead and revert the `"serve"` script change in `package.json` -- it's no
 # dotenv environment variables file
 .env
 ```
+
+## Create a POST request
+
+Let's work with the actual database and persist some data into it. Here's the plan:
+
+- Create a `postMovie(...)` method in `MoviesController.ts` that will create a new `Movie` model based on the JSON request body and save (persist) it
+- Create a `POST /movies/new` route that uses that `postMovie(...)` controller method 
+- Configure the app to handle JSON requests
+
+### Handling JSON requests
+
+Express includes middleware for handling requests with the header `Content-Type: application/json` which (assumedly) has a body with JSON content. This middleware is built into Express: `express.json()`. Configure the app to use this middleware:
+
+```ts
+// src/index.ts
+
+// ...
+app.set('view engine', 'jsx');
+app.engine('jsx', require('express-react-views').createEngine());
+
+// Parses JSON in body
+app.use(express.json()); // << Add this line
+
+// ...
+```
+
+Create the POST request handler in `MoviesController.ts`:
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export async function postMovie(req: Request, res: Response) {
+    // Create the new movie using the JSON data from the request body
+    const newMovie = new Movie(req.body);
+
+    // Persist the movie to the database
+    const savedMovie = await newMovie.save();
+
+    // Respond with the persisted data
+    return res.json(savedMovie);
+}
+```
+
+And then create the route in `MoviesRouter.ts`:
+
+```ts
+// src/routes/MoviesRouter.ts
+// ...
+
+// POST /movies/new
+moviesRouter.post('/new', moviesController.postMovie);
+```
+
+Build and run the app. Using [Postman](https://www.getpostman.com/) or [cURL](https://curl.haxx.se/), make a POST request with:
+
+- Headers: `Content-Type: application/json`
+- Body: any sample movie data that fits the `Movie` model schema:
+
+```json
+{
+	"title": "Mission Impossible",
+	"releaseDate": "2018-06-06",
+	"genre": "Action",
+	"price": 10.5
+}
+```
+
+You should get a response like:
+
+```json
+{
+    "_id": "5b6db66479f65945894e0d1c",
+    "title": "Mission Impossible",
+    "releaseDate": "2018-06-06T00:00:00.000Z",
+    "genre": "Action",
+    "price": 10.5,
+    "__v": 0
+}
+```
