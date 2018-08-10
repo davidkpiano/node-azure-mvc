@@ -775,3 +775,82 @@ connect(mongoUrl)
 </details>
 <br />
 
+### Environmnet variables
+
+Of course, hard-coding the connection string isn't the best idea, especially if we want this to be configurable in different environments. In Node, environment variables are loaded into the global [`process.env`](https://nodejs.org/api/process.html#process_process_env) object. For example, let's make the port configurable by editing the `"serve"` script in `package.json` and using the `PORT` environment variable to serve our app:
+
+```js
+// package.json
+// ...
+    "scripts": {
+        "start": "npm run serve",
+        "serve": "PORT=5001 node dist/index.js",
+        "build-ts": "tsc",
+        "watch-ts": "tsc --watch",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+// ...
+```
+
+```ts
+// src/index.ts
+
+// ...
+
+const port = process.env.PORT || 5000;
+
+// Starts the app on the configured port, then calls the callback when
+// the app successfully starts.
+app.listen(port, () => {
+    console.log(`Listening on port ${port}: http://localhost:${port}`);
+});
+```
+
+That `PORT=5001` command will put `"5001"` into `process.env.PORT`, which we can use directly in the Node scripts. Now when you build and run the app, you should see `Listening on port 5001: http://localhost:5001`.
+
+However, we will have many environment variables to manage. To make this easier, we can create a `.env` file at the root of our project that contains these environment variables, and then automatically load them in using a [handy module called `dotenv`](https://www.npmjs.com/package/dotenv).
+
+First, create the `.env` file:
+
+```bash
+# .env
+PORT=5001
+MONGODB_URL=mongodb://127.0.0.1:27017/moviesapp
+```
+
+Install `dotenv` and its types:
+
+```bash
+npm install dotenv --save && npm install @types/dotenv --save-dev
+```
+
+And initialize `dotenv` in `index.ts` (this is [straight from the readme](https://www.npmjs.com/package/dotenv#usage)):
+
+```ts
+// src/index.ts
+// ...
+
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+// Connect the database
+// Notice how we got rid of the hardcoded URL:
+connect(process.env.MONGODB_URL)
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch(err => {
+        console.log('MongoDB connection error.');
+    });
+    
+// ...
+
+const port = process.env.PORT;
+
+app.listen(process.env.PORT, () => {
+    console.log(`Listening on port ${port}: http://localhost:${port}`);
+});
+```
+
+And go ahead and revert the `"serve"` script change in `package.json` -- it's no longer needed. Build and run your app to verify that everything still works.
