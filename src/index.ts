@@ -3,6 +3,10 @@ import moviesRouter from './routers/MoviesRouter';
 import * as path from 'path';
 import { connect } from 'mongoose';
 
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 // Connect the database
 // We'll remove the hardcoded URL later.
 const mongoUrl = 'mongodb://127.0.0.1:27017/moviesapp';
@@ -25,8 +29,10 @@ app.engine('jsx', require('express-react-views').createEngine());
 // Handles /movies routes
 app.use('/movies', moviesRouter);
 
-// Starts the app on port 5000, then calls the callback when
+const port = process.env.PORT || 5000;
+
+// Starts the app on the configured port, then calls the callback when
 // the app successfully starts.
-app.listen(5000, () => {
-    console.log('Listening on port 5000: http://localhost:5000');
+app.listen(port, () => {
+    console.log(`Listening on port ${port}: http://localhost:${port}`);
 });
