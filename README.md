@@ -775,7 +775,7 @@ connect(mongoUrl)
 </details>
 <br />
 
-### Environmnet variables
+### Environment variables
 
 Of course, hard-coding the connection string isn't the best idea, especially if we want this to be configurable in different environments. In Node, environment variables are loaded into the global [`process.env`](https://nodejs.org/api/process.html#process_process_env) object. For example, let's make the port configurable by editing the `"serve"` script in `package.json` and using the `PORT` environment variable to serve our app:
 
