@@ -854,3 +854,10 @@ app.listen(process.env.PORT, () => {
 ```
 
 And go ahead and revert the `"serve"` script change in `package.json` -- it's no longer needed. Build and run your app to verify that everything still works.
+
+⚠️ **Warning:** Before you make any commits, always make sure that your `.env` files are ignored. Check that this is in your `.gitignore` file:
+
+```bash
+# dotenv environment variables file
+.env
+```
