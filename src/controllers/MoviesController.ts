@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import Movie from '../models/Movie';
 
 export function index(req: Request, res: Response) {
     // The second argument ({ title: ... }) will be passed to the view engine,
@@ -12,4 +13,12 @@ export function getWelcome(req: Request, res: Response) {
 
     // res.send(`Hello ${name}, ID is: ${id}`);
     res.render('movies/index', { title: 'Movies' });
+}
+
+export async function postMovie(req: Request, res: Response) {
+    const newMovie = new Movie(req.body);
+
+    const savedMovie = await newMovie.save();
+
+    return res.json(savedMovie);
 }

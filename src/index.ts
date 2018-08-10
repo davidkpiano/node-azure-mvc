@@ -26,6 +26,9 @@ app.set('views', path.join(__dirname, '/views'));
 app.set('view engine', 'jsx');
 app.engine('jsx', require('express-react-views').createEngine());
 
+// Parses JSON in body
+app.use(express.json());
+
 // Handles /movies routes
 app.use('/movies', moviesRouter);
 
