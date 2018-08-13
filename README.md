@@ -706,7 +706,7 @@ import { Schema, model } from 'mongoose';
 
 // Create Movie schema
 const MovieSchema = new Schema({
-    title: String,
+    title: { type: String, required: true },
     releaseDate: Date,
     genre: String,
     price: Number
@@ -717,6 +717,8 @@ const Movie = model('Movie', MovieSchema);
 
 export default Movie;
 ```
+
+That `{ type, required }` syntax for the `title` property is part of [Mongoose's validation](http://mongoosejs.com/docs/validation.html).
 
 Before we go further, we need an actual MongoDB database to store our data. Follow [the MongoDB installation steps](https://docs.mongodb.com/manual/installation/#tutorial-installation) and then run the `mongod` process. You should see terminal output that includes the line:
 
@@ -894,14 +896,19 @@ Create the POST request handler in `MoviesController.ts`:
 // ...
 
 export async function postMovie(req: Request, res: Response) {
-    // Create the new movie using the JSON data from the request body
-    const newMovie = new Movie(req.body);
+    try {
+	// Create the new movie using the JSON data from the request body
+    	const newMovie = new Movie(req.body);
+	
+    	// Persist the movie to the database
+        const savedMovie = await newMovie.save();
 
-    // Persist the movie to the database
-    const savedMovie = await newMovie.save();
-
-    // Respond with the persisted data
-    return res.json(savedMovie);
+	// Respond with the persisted data
+        return res.json(savedMovie);
+    } catch (ex) {
+    	// Catch any validation errors
+        return res.status(400).send(ex.message);
+    }
 }
 ```
 
@@ -941,3 +948,9 @@ You should get a response like:
     "__v": 0
 }
 ```
+
+If you try to send an invalid request, such as missing the `title` attribute, Mongoose will throw an error like:
+
+> `Movie validation failed: title: Path `title` is required.`
+
+In our code, we're surfacing that error to the user with a `400 Bad Request` status code.
