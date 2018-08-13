@@ -995,3 +995,92 @@ moviesRouter.get('/:id', moviesController.getMovie);
 
 You can build/run the app, make a `POST /movies/` request to create a movie, get its ID, and verify that the `GET /movies/:id` endpoint is working.
 
+## Deploy to Azure
+
+At this point, we have a solid <attr title="Minimum Viable Product">MVP</attr> for our Movies app, and we can deploy it to the cloud. We'll be using [Azure App Service]() to do this. If you want more info on how to deploy a Node and MongoDB app to Azure App Service, check out [this tutorial](https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app), which we will be following.
+
+Here's the plan:
+1. Create a production MongoDB instance using Cosmos DB
+2. Configure environment variables on Azure
+3. Test the production environment locally
+4. Deploy app to Azure App Service
+    - Configure a deployment user
+    - Create an App Service Plan
+    - Create a Web App using local git
+    - Push to Azure from Git
+    
+### Create a resource group
+
+This resource group will contain the web app and CosmosDB instance. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-resource-group
+
+```bash
+az group create \
+    --name moviesResourceGroup \
+    --location "East US"
+```
+
+### Create an app service plan
+
+https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-an-app-service-plan
+
+```bash
+az appservice plan create \
+    --name moviesServicePlan \
+    --resource-group moviesResourceGroup \
+    --sku FREE
+```
+
+### Create an Azure web app
+
+To find the available Node runtimes, run `az webapp list-runtimes | grep node`
+
+```bash
+az webapp create \
+    --resource-group moviesResourceGroup
+    --plan moviesServicePlan
+    --name someGloballyUniqueMoviesApp
+    --runtime "node|8.1"
+    --deployment-local-git
+```
+
+### Create a Cosmos DB account
+
+Using Cosmos DB, we can interface with a database instance with the MongoDB API. This is done by specifying the `--kind MongoDB` argument. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-cosmos-db-account
+
+```bash
+az cosmosdb create \
+    --name movies \
+    --resource-group moviesResourceGroup \
+    --kind MongoDB
+```
+
+Once created, the database keys can be retrieved. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#connect-app-to-production-mongodb
+
+```bash
+az cosmosdb list-keys --name movies --resource-group moviesResourceGroup
+```
+
+The linked tutorial stores the production-specific environment variables locally; however, this is not recommended. Instead, you should be using Azure itself to manage production environment variables, and only keeping local environment variables locally.
+
+### Configuring environment variables
+
+We'll need to configure one environment variable to connect to MongoDB:
+
+- `MONGODB_URL` - the database connection URL (e.g., `"mongodb://127.0.0.1:27017/moviesapp"`)
+
+To set this in Azure, use [`az webapp config appsettings set`](https://docs.microsoft.com/en-us/cli/azure/webapp/config/appsettings?view=azure-cli-latest#az-webapp-config-appsettings-set):
+
+```bash
+az webapp config appsettings set \
+    --name someGloballyUniqueMoviesApp \
+    --resource-group moviesResourceGroup \
+    --settings MONGODB_URL="mongodb://<cosmosdb_name>:<primary_master_key>@<cosmosdb_name>.documents.azure.com:10250/mean?ssl=true"
+```
+
+Replace `<cosmosdb_name>` with the created Cosmos DB database name (e.g., `movies`) and `<primary_master_key>` with the `primaryMasterKey` property from running `az cosmosdb list-keys --name movies --resource-group moviesResourceGroup` previously.
+
+This will allow us to work with two separate environments - our local `development` environment as well as our `production` environment:
+
+- The local development app will find the `MONGODB_URL` in the local `.env` file (which is not checked in, thanks to the `.gitignore` file)
+- The production app will have the `MONGODB_URL` environment variable set by Azure, and will read it from there.
+
