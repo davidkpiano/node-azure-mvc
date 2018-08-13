@@ -10,6 +10,9 @@ moviesRouter.get('/', moviesController.index);
 // GET /movies/welcome
 moviesRouter.get('/welcome/:id', moviesController.getWelcome);
 
+// GET /movies/:id
+moviesRouter.get('/:id', moviesController.getMovie);
+
 // POST /movies/new
 moviesRouter.post('/new', moviesController.postMovie);
 
