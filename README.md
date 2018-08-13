@@ -1036,10 +1036,10 @@ To find the available Node runtimes, run `az webapp list-runtimes | grep node`
 
 ```bash
 az webapp create \
-    --resource-group moviesResourceGroup
-    --plan moviesServicePlan
-    --name someGloballyUniqueMoviesApp
-    --runtime "node|8.1"
+    --resource-group moviesResourceGroup \
+    --plan moviesServicePlan \
+    --name someGloballyUniqueMoviesApp \
+    --runtime "node|8.1" \
     --deployment-local-git
 ```
 
