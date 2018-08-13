@@ -951,6 +951,47 @@ You should get a response like:
 
 If you try to send an invalid request, such as missing the `title` attribute, Mongoose will throw an error like:
 
-> `Movie validation failed: title: Path `title` is required.`
+> `Movie validation failed: title: Path 'title' is required.`
 
 In our code, we're surfacing that error to the user with a `400 Bad Request` status code.
+
+## Create a GET request
+
+When creating a [document in MongoDB](http://mongoosejs.com/docs/documents.html) (that is, an instance of a model), a unique ID is automatically assigned to it. Add a GET endpoint to retrieve movies by their ID:
+
+1. Create the `getMovie` request handler in `MoviesController.ts`
+    - This will query the database for a `Movie` model by its `_id` and respond with it as JSON
+    - If not found, this should respond with `404 Not Found`.
+2. Add the `GET /movies/:id` route to `MoviesRouter.ts`
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export async function getMovie(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const movie = await Movie.findById(id).exec();
+
+    if (!movie) {
+        return res.status(404);
+    }
+
+    return res.json(movie);
+}
+
+// ...
+```
+
+```ts
+// src/routers/MoviesRouter.ts
+// ...
+
+// GET /movies/:id
+moviesRouter.get('/:id', moviesController.getMovie);
+
+// ...
+```
+
+You can build/run the app, make a `POST /movies/` request to create a movie, get its ID, and verify that the `GET /movies/:id` endpoint is working.
+
