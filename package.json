@@ -4,7 +4,7 @@
     "description": "Example application for creating an MVC Express + Node + TypeScript app and deploying it to Azure",
     "main": "index.js",
     "scripts": {
-        "start": "npm run serve",
+        "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
         "build-ts": "tsc",
         "watch-ts": "tsc --watch",

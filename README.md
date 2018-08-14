@@ -1045,11 +1045,13 @@ az webapp create \
 
 ### Create a Cosmos DB account
 
-Using Cosmos DB, we can interface with a database instance with the MongoDB API. This is done by specifying the `--kind MongoDB` argument. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-cosmos-db-account
+Using Cosmos DB, we can interface with a database instance with the MongoDB API. This is done by specifying the `--kind MongoDB` argument. Create a database with a globally unique name. Grab a coffee, because this might take a while. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-cosmos-db-account
+
+⚠️ The database name has to be globally unique and lowercase.
 
 ```bash
 az cosmosdb create \
-    --name movies \
+    --name globally-unique-movies \
     --resource-group moviesResourceGroup \
     --kind MongoDB
 ```
@@ -1057,7 +1059,7 @@ az cosmosdb create \
 Once created, the database keys can be retrieved. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#connect-app-to-production-mongodb
 
 ```bash
-az cosmosdb list-keys --name movies --resource-group moviesResourceGroup
+az cosmosdb list-keys --name globally-unique-movies --resource-group moviesResourceGroup
 ```
 
 The linked tutorial stores the production-specific environment variables locally; however, this is not recommended. Instead, you should be using Azure itself to manage production environment variables, and only keeping local environment variables locally.
@@ -1077,10 +1079,22 @@ az webapp config appsettings set \
     --settings MONGODB_URL="mongodb://<cosmosdb_name>:<primary_master_key>@<cosmosdb_name>.documents.azure.com:10250/mean?ssl=true"
 ```
 
-Replace `<cosmosdb_name>` with the created Cosmos DB database name (e.g., `movies`) and `<primary_master_key>` with the `primaryMasterKey` property from running `az cosmosdb list-keys --name movies --resource-group moviesResourceGroup` previously.
+Replace `<cosmosdb_name>` with the created Cosmos DB database name (e.g., `globally-unique-moviesmovies`) and `<primary_master_key>` with the `primaryMasterKey` property from running `az cosmosdb list-keys --name globally-unique-movies --resource-group moviesResourceGroup` previously.
 
 This will allow us to work with two separate environments - our local `development` environment as well as our `production` environment:
 
 - The local development app will find the `MONGODB_URL` in the local `.env` file (which is not checked in, thanks to the `.gitignore` file)
 - The production app will have the `MONGODB_URL` environment variable set by Azure, and will read it from there.
+
+### Deploy app to Azure
+
+Create deployment credentials using the [`az webapp deployment user set`](https://docs.microsoft.com/en-us/cli/azure/webapp/deployment/user?view=azure-cli-latest#az_webapp_deployment_user_set) command. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#deploy-app-to-azure
+
+```bash
+az webapp deployment user set --user-name <username> --password <password>
+```
+
+We will use Git to deploy the app, using the `deploymentLocalGitUrl` from the `az webapp create` step:
+
+> https://<username>@<appname>.scm.azurewebsites.net/<appname>.git
 
