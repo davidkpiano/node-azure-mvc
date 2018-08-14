@@ -706,7 +706,7 @@ import { Schema, model } from 'mongoose';
 
 // Create Movie schema
 const MovieSchema = new Schema({
-    title: String,
+    title: { type: String, required: true },
     releaseDate: Date,
     genre: String,
     price: Number
@@ -717,6 +717,8 @@ const Movie = model('Movie', MovieSchema);
 
 export default Movie;
 ```
+
+That `{ type, required }` syntax for the `title` property is part of [Mongoose's validation](http://mongoosejs.com/docs/validation.html).
 
 Before we go further, we need an actual MongoDB database to store our data. Follow [the MongoDB installation steps](https://docs.mongodb.com/manual/installation/#tutorial-installation) and then run the `mongod` process. You should see terminal output that includes the line:
 
@@ -861,3 +863,224 @@ And go ahead and revert the `"serve"` script change in `package.json` -- it's no
 # dotenv environment variables file
 .env
 ```
+
+## Create a POST request
+
+Let's work with the actual database and persist some data into it. Here's the plan:
+
+- Create a `postMovie(...)` method in `MoviesController.ts` that will create a new `Movie` model based on the JSON request body and save (persist) it
+- Create a `POST /movies/new` route that uses that `postMovie(...)` controller method 
+- Configure the app to handle JSON requests
+
+### Handling JSON requests
+
+Express includes middleware for handling requests with the header `Content-Type: application/json` which (assumedly) has a body with JSON content. This middleware is built into Express: `express.json()`. Configure the app to use this middleware:
+
+```ts
+// src/index.ts
+
+// ...
+app.set('view engine', 'jsx');
+app.engine('jsx', require('express-react-views').createEngine());
+
+// Parses JSON in body
+app.use(express.json()); // << Add this line
+
+// ...
+```
+
+Create the POST request handler in `MoviesController.ts`:
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export async function postMovie(req: Request, res: Response) {
+    try {
+	// Create the new movie using the JSON data from the request body
+    	const newMovie = new Movie(req.body);
+	
+    	// Persist the movie to the database
+        const savedMovie = await newMovie.save();
+
+	// Respond with the persisted data
+        return res.json(savedMovie);
+    } catch (ex) {
+    	// Catch any validation errors
+        return res.status(400).send(ex.message);
+    }
+}
+```
+
+And then create the route in `MoviesRouter.ts`:
+
+```ts
+// src/routes/MoviesRouter.ts
+// ...
+
+// POST /movies/new
+moviesRouter.post('/new', moviesController.postMovie);
+```
+
+Build and run the app. Using [Postman](https://www.getpostman.com/) or [cURL](https://curl.haxx.se/), make a POST request with:
+
+- Headers: `Content-Type: application/json`
+- Body: any sample movie data that fits the `Movie` model schema:
+
+```json
+{
+	"title": "Mission Impossible",
+	"releaseDate": "2018-06-06",
+	"genre": "Action",
+	"price": 10.5
+}
+```
+
+You should get a response like:
+
+```json
+{
+    "_id": "5b6db66479f65945894e0d1c",
+    "title": "Mission Impossible",
+    "releaseDate": "2018-06-06T00:00:00.000Z",
+    "genre": "Action",
+    "price": 10.5,
+    "__v": 0
+}
+```
+
+If you try to send an invalid request, such as missing the `title` attribute, Mongoose will throw an error like:
+
+> `Movie validation failed: title: Path 'title' is required.`
+
+In our code, we're surfacing that error to the user with a `400 Bad Request` status code.
+
+## Create a GET request
+
+When creating a [document in MongoDB](http://mongoosejs.com/docs/documents.html) (that is, an instance of a model), a unique ID is automatically assigned to it. Add a GET endpoint to retrieve movies by their ID:
+
+1. Create the `getMovie` request handler in `MoviesController.ts`
+    - This will query the database for a `Movie` model by its `_id` and respond with it as JSON
+    - If not found, this should respond with `404 Not Found`.
+2. Add the `GET /movies/:id` route to `MoviesRouter.ts`
+
+```ts
+// src/controllers/MoviesController.ts
+// ...
+
+export async function getMovie(req: Request, res: Response) {
+    const { id } = req.params;
+
+    const movie = await Movie.findById(id).exec();
+
+    if (!movie) {
+        return res.status(404);
+    }
+
+    return res.json(movie);
+}
+
+// ...
+```
+
+```ts
+// src/routers/MoviesRouter.ts
+// ...
+
+// GET /movies/:id
+moviesRouter.get('/:id', moviesController.getMovie);
+
+// ...
+```
+
+You can build/run the app, make a `POST /movies/` request to create a movie, get its ID, and verify that the `GET /movies/:id` endpoint is working.
+
+## Deploy to Azure
+
+At this point, we have a solid <attr title="Minimum Viable Product">MVP</attr> for our Movies app, and we can deploy it to the cloud. We'll be using [Azure App Service]() to do this. If you want more info on how to deploy a Node and MongoDB app to Azure App Service, check out [this tutorial](https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app), which we will be following.
+
+Here's the plan:
+1. Create a production MongoDB instance using Cosmos DB
+2. Configure environment variables on Azure
+3. Test the production environment locally
+4. Deploy app to Azure App Service
+    - Configure a deployment user
+    - Create an App Service Plan
+    - Create a Web App using local git
+    - Push to Azure from Git
+    
+### Create a resource group
+
+This resource group will contain the web app and CosmosDB instance. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-resource-group
+
+```bash
+az group create \
+    --name moviesResourceGroup \
+    --location "East US"
+```
+
+### Create an app service plan
+
+https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-an-app-service-plan
+
+```bash
+az appservice plan create \
+    --name moviesServicePlan \
+    --resource-group moviesResourceGroup \
+    --sku FREE
+```
+
+### Create an Azure web app
+
+To find the available Node runtimes, run `az webapp list-runtimes | grep node`
+
+```bash
+az webapp create \
+    --resource-group moviesResourceGroup \
+    --plan moviesServicePlan \
+    --name someGloballyUniqueMoviesApp \
+    --runtime "node|8.1" \
+    --deployment-local-git
+```
+
+### Create a Cosmos DB account
+
+Using Cosmos DB, we can interface with a database instance with the MongoDB API. This is done by specifying the `--kind MongoDB` argument. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-cosmos-db-account
+
+```bash
+az cosmosdb create \
+    --name movies \
+    --resource-group moviesResourceGroup \
+    --kind MongoDB
+```
+
+Once created, the database keys can be retrieved. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#connect-app-to-production-mongodb
+
+```bash
+az cosmosdb list-keys --name movies --resource-group moviesResourceGroup
+```
+
+The linked tutorial stores the production-specific environment variables locally; however, this is not recommended. Instead, you should be using Azure itself to manage production environment variables, and only keeping local environment variables locally.
+
+### Configuring environment variables
+
+We'll need to configure one environment variable to connect to MongoDB:
+
+- `MONGODB_URL` - the database connection URL (e.g., `"mongodb://127.0.0.1:27017/moviesapp"`)
+
+To set this in Azure, use [`az webapp config appsettings set`](https://docs.microsoft.com/en-us/cli/azure/webapp/config/appsettings?view=azure-cli-latest#az-webapp-config-appsettings-set):
+
+```bash
+az webapp config appsettings set \
+    --name someGloballyUniqueMoviesApp \
+    --resource-group moviesResourceGroup \
+    --settings MONGODB_URL="mongodb://<cosmosdb_name>:<primary_master_key>@<cosmosdb_name>.documents.azure.com:10250/mean?ssl=true"
+```
+
+Replace `<cosmosdb_name>` with the created Cosmos DB database name (e.g., `movies`) and `<primary_master_key>` with the `primaryMasterKey` property from running `az cosmosdb list-keys --name movies --resource-group moviesResourceGroup` previously.
+
+This will allow us to work with two separate environments - our local `development` environment as well as our `production` environment:
+
+- The local development app will find the `MONGODB_URL` in the local `.env` file (which is not checked in, thanks to the `.gitignore` file)
+- The production app will have the `MONGODB_URL` environment variable set by Azure, and will read it from there.
+
