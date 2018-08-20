@@ -7,7 +7,7 @@
         "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
         "build-ts": "./node_modules/.bin/tsc",
-        "watch-ts": "tsc --watch",
+        "watch-ts": "./node_modules/.bin/tsc --watch",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
