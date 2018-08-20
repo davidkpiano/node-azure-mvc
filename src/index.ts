@@ -30,7 +30,7 @@ app.engine('jsx', require('express-react-views').createEngine());
 // Parses JSON in body
 app.use(express.json());
 
-app.use('/', (req, res) => res.send('Hello world!'));
+app.use('/', (req, res) => res.send('Hello 33world!'));
 
 // Handles /movies routes
 app.use('/movies', moviesRouter);
