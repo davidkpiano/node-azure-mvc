@@ -7,16 +7,17 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Connect the database
-// We'll remove the hardcoded URL later.
-// const mongoUrl = 'mongodb://127.0.0.1:27017/moviesapp';
-// connect(mongoUrl)
-//     .then(() => {
-//         console.log('Connected to MongoDB');
-//     })
-//     .catch(err => {
-//         console.log('MongoDB connection error.');
-//     });
+connect(process.env.MONGO_URL)
+    .then(() => {
+        console.log('Connected to MongoDB');
+    })
+    .catch(err => {
+        console.log(
+            `MongoDB connection error - could not connect to ${
+                process.env.MONGO_URL
+            }`
+        );
+    });
 
 // Creates a new Express app instance
 const app = express();
