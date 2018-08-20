@@ -5,7 +5,6 @@
     "main": "index.js",
     "scripts": {
         "start": "npm run build-ts && npm run serve",
-        "postinstall": "npm start",
         "serve": "node dist/index.js",
         "build-ts": "tsc",
         "watch-ts": "tsc --watch",
