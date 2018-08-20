@@ -7,14 +7,14 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-connect(process.env.MONGO_URL)
+connect(process.env.MONGODB_URL)
     .then(() => {
         console.log('Connected to MongoDB');
     })
     .catch(err => {
         console.log(
             `MongoDB connection error - could not connect to ${
-                process.env.MONGO_URL
+                process.env.MONGODB_URL
             }`
         );
     });
