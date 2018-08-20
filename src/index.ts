@@ -34,6 +34,7 @@ app.use('/', (req, res) => res.send('Hello 3world!'));
 // Handles /movies routes
 app.use('/movies', moviesRouter);
 
+console.log(process.env);
 const port = process.env.PORT || 5000;
 
 // Starts the app on the configured port, then calls the callback when
