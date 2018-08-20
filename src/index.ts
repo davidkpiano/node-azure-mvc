@@ -33,7 +33,7 @@ app.use(express.json());
 // Handles /movies routes
 app.use('/movies', moviesRouter);
 
-app.use('/', (req, res) => res.send('Hello world from index!'));
+// app.use('/', (req, res) => res.send('Hello world from index!'));
 
 const port = process.env.PORT || 5000;
 
