@@ -30,7 +30,8 @@
         "mongoose": "^5.2.7",
         "pug": "^2.0.3",
         "react": "^16.4.2",
-        "react-dom": "^16.4.2"
+        "react-dom": "^16.4.2",
+        "typescript": "^3.0.1"
     },
     "devDependencies": {
         "@types/dotenv": "^4.0.3",
@@ -38,7 +39,6 @@
         "@types/hbs": "^4.0.0",
         "@types/mongoose": "^5.2.4",
         "@types/pug": "^2.0.4",
-        "@types/react": "^16.4.8",
-        "typescript": "^3.0.1"
+        "@types/react": "^16.4.8"
     }
 }
