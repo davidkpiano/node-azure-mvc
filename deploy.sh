@@ -117,5 +117,8 @@ if [ -e "$DEPLOYMENT_TARGET/package.json" ]; then
   cd - > /dev/null
 fi
 
+# 4. Run application
+eval $NPM_CMD start
+
 ##################################################################################################################################
 echo "Finished successfully."
