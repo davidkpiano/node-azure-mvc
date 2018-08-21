@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import Movie from '../models/Movie';
 
 export function index(req: Request, res: Response) {
@@ -15,16 +15,24 @@ export function getWelcome(req: Request, res: Response) {
     res.render('movies/index', { title: 'Movies' });
 }
 
-export async function getMovie(req: Request, res: Response) {
-    const { id } = req.params;
+export async function getMovie(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const { id } = req.params;
 
-    const movie = await Movie.findById(id).exec();
+        const movie = await Movie.findById(id).exec();
 
-    if (!movie) {
-        return res.status(404);
+        if (!movie) {
+            return res.status(404);
+        }
+
+        return res.json(movie);
+    } catch (e) {
+        next(e);
     }
-
-    return res.json(movie);
 }
 
 export async function postMovie(req: Request, res: Response) {
