@@ -7,11 +7,15 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-connect(process.env.MONGODB_URL)
+connect(
+    process.env.MONGODB_URL,
+    { useNewUrlParser: true, dbName: 'movies' }
+)
     .then(() => {
         console.log('Connected to MongoDB');
     })
     .catch(err => {
+        console.error(err);
         console.log(
             `MongoDB connection error - could not connect to ${
                 process.env.MONGODB_URL
