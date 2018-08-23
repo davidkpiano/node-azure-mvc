@@ -6,6 +6,7 @@
     "scripts": {
         "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
+        "watch": "pm2 run index.ts",
         "build-ts": "./node_modules/.bin/tsc",
         "watch-ts": "./node_modules/.bin/tsc --watch",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -37,5 +38,8 @@
         "react": "^16.4.2",
         "react-dom": "^16.4.2",
         "typescript": "^3.0.1"
+    },
+    "devDependencies": {
+        "pm2": "^3.0.4"
     }
 }

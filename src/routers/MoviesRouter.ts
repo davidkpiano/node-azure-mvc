@@ -5,7 +5,7 @@ import * as moviesController from '../controllers/MoviesController';
 const moviesRouter = Router();
 
 // GET /movies/
-moviesRouter.get('/', moviesController.index);
+moviesRouter.get('/', moviesController.getAllMovies);
 
 // GET /movies/welcome
 moviesRouter.get('/welcome/:id', moviesController.getWelcome);

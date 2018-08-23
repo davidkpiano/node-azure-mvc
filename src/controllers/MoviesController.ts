@@ -26,10 +26,24 @@ export async function getMovie(
         const movie = await Movie.findById(id).exec();
 
         if (!movie) {
-            return res.status(404);
+            return res.status(404).send('Movie not found');
         }
 
         return res.json(movie);
+    } catch (e) {
+        next(e);
+    }
+}
+
+export async function getAllMovies(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const movies = await Movie.find({}).exec();
+
+        return res.json(movies);
     } catch (e) {
         next(e);
     }
