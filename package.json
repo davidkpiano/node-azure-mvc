@@ -6,7 +6,7 @@
     "scripts": {
         "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
-        "watch": "concurrently \"npm:watch-ts\" \"npm:serve-dev\"",
+        "watch": "npm run watch-ts & ./node_modules/.bin/nodemon dist/index.js",
         "serve-dev": "./node_modules/.bin/pm2 start ./dist/index.js --watch",
         "build-ts": "./node_modules/.bin/tsc",
         "watch-ts": "./node_modules/.bin/tsc --watch",
@@ -41,7 +41,10 @@
         "typescript": "^3.0.1"
     },
     "devDependencies": {
-        "concurrently": "^3.6.1",
-        "pm2": "^3.0.4"
+        "@types/chai": "^4.1.4",
+        "@types/mocha": "^5.2.5",
+        "chai": "^4.1.2",
+        "mocha": "^5.2.0",
+        "nodemon": "^1.18.3"
     }
 }
