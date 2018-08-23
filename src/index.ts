@@ -2,7 +2,7 @@ import express from 'express';
 import moviesRouter from './routers/MoviesRouter';
 import * as path from 'path';
 import { connect } from 'mongoose';
-
+import cors from 'cors';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -25,6 +25,9 @@ connect(
 
 // Creates a new Express app instance
 const app = express();
+
+// Allow CORS
+app.use(cors());
 
 // Sets up the view engine
 app.set('views', path.join(__dirname, '/views'));

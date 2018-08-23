@@ -35,13 +35,19 @@ export async function getMovie(
     }
 }
 
-export async function getAllMovies(
+export async function getMovies(
     req: Request,
     res: Response,
     next: NextFunction
 ) {
     try {
-        const movies = await Movie.find({}).exec();
+        const query = req.query.search
+            ? // Search term provided
+              { $text: { $search: req.query.search } }
+            : // No search term - show all movies
+              {};
+
+        const movies = await Movie.find(query).exec();
 
         return res.json(movies);
     } catch (e) {
