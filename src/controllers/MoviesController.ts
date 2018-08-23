@@ -40,12 +40,15 @@ export async function getMovies(
     res: Response,
     next: NextFunction
 ) {
+    const { search, genre } = req.query;
+
     try {
-        const query = req.query.search
-            ? // Search term provided
-              { $text: { $search: req.query.search } }
-            : // No search term - show all movies
-              {};
+        const query = {
+            // Search query provided
+            ...(search ? { $text: { $search: search || '' } } : undefined),
+            // Genre query provided
+            ...(genre ? { genre } : undefined)
+        };
 
         const movies = await Movie.find(query).exec();
 
