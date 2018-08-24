@@ -280,9 +280,9 @@ Although Express is unopinionated, a common architectural pattern to implementin
 - **Views** will be used for displaying the app's UI. With single-page apps (SPAs), views will remain mostly static, as the app will be used in a RESTful way.
   - e.g., `src/views/users.pug`
 - **Controllers** will handle requests, make calls to the necessary models to fetch/update data, and respond with a representation of that data -- which can be an HTML response (with MVC apps), a JSON response (RESTful API + SPA), a status code response, etc.
-  - e.g., `src/controllers/UsersController.ts`
+  - e.g., `src/controllers/MoviesController.ts`
 - **Routers** will map URLs to controller request handlers.
-  - e.g., `src/routers/UsersRouter.ts`
+  - e.g., `src/routers/MoviesRouter.ts`
 
 Create `src/controllers/MoviesController.ts`:
 
@@ -485,13 +485,13 @@ Install these three modules (and their types):
 - `express-react-views` - the template engine for Express to understand `.jsx` files
   - Note: you don't need to install types for this since it's implicitly loaded by Express
 - `react` - the framework for creating React components
-- `react-dom` - parses React components and outputs them as HTML
+- `react-dom` - parses React components and outputs them as HTML (hence DOM, or Document Object Model)
 
 ```bash
 # install the modules
 npm install express-react-views react react-dom --save
 # install the types
-npm install @types/react @types/react-dom --save-dev
+npm install @types/react @types/react-dom --save
 ```
 
 ```ts
@@ -539,11 +539,11 @@ Before we start, we need to make one quick config change to `tsconfig.json`. Add
 
 {
     "compilerOptions": {
-        ...
+        // ...
         "jsx": "preserve",
-        ...
+        // ...
     },
-    ...
+    // ...
 }
 ```
 
@@ -623,8 +623,8 @@ Build and run the app, navigate to http://localhost:5000/movies/, and you should
 
 With React, you create [components](https://reactjs.org/docs/react-component.html) which can be composed together. This is helpful when creating layouts. Let's create a base HTML page layout in `src/layouts/base.tsx`:
 
-```ts
-// src/layouts/base.tsx
+```tsx
+// src/views/layouts/base.tsx
 import * as React from 'react';
 
 interface IBaseLayoutProps {
@@ -652,9 +652,16 @@ class BaseLayout extends React.Component<IBaseLayoutProps> {
 export default BaseLayout;
 ```
 
-The interpolated `{this.props.children}` variable contains the child elements that are passed into the `<BaseLayout>` component. We can import `BaseLayout` and use it in the `MoviesView`:
+There is a special component property called `this.props`, which contains the passed-in attributes and children of the custom React component.
+
+In this example, `this.props.title` refers to the variable passed into `<BaseLayout title="some title">`
+
+The interpolated `{this.props.children}` variable contains the child elements that are passed into the `<BaseLayout>` component.
+
+Import `BaseLayout` and use it in the `MoviesView`:
 
 ```tsx
+// src/views/movies/index.tsx
 import * as React from 'react';
 import BaseLayout from '../layouts/base';
 
@@ -695,23 +702,25 @@ In a real app, the data that the controller retrieves, which is then passed to t
 First install Mongoose and its types:
 
 ```bash
-npm install mongoose --save
-npm install @types/mongoose --save-dev
+npm install mongoose @types/mongoose --save
 ```
 
 Now create a `Movie` model in `src/models/Movie.ts`. This will be responsible for creating, updating, deleting, querying, etc. our movies.
 
 ```ts
+// src/models/Movie.ts
 import { Schema, model } from 'mongoose';
 
 // Create Movie schema
 const MovieSchema = new Schema({
-    title: { type: String, required: true },
+    title: {
+        type: String,
+        required: true
+    },
     releaseDate: Date,
     genre: String,
     price: Number
 });
-
 // Create Movie model
 const Movie = model('Movie', MovieSchema);
 
@@ -855,7 +864,7 @@ app.listen(process.env.PORT, () => {
 });
 ```
 
-And go ahead and revert the `"serve"` script change in `package.json` -- it's no longer needed. Build and run your app to verify that everything still works.
+And go ahead and revert the `"serve"` script change in `package.json` -- it's no longer needed. Build and run your app (`npm run start`) to verify that everything still works.
 
 ⚠️ **Warning:** Before you make any commits, always make sure that your `.env` files are ignored. Check that this is in your `.gitignore` file:
 
@@ -863,6 +872,33 @@ And go ahead and revert the `"serve"` script change in `package.json` -- it's no
 # dotenv environment variables file
 .env
 ```
+
+## Automatic building
+
+If you find yourself repeating something a lot, it's best to automate it away. Right now, we're finding ourselves having to stop and restart the app (`npm run start`) every time we make a change that we want to view.
+
+Instead, we can use the popular [`nodemon`](https://nodemon.io/) package to reload the app automatically.
+
+1. Install `nodemon`: `npm install nodemon --save-dev` (not used in production)
+2. Add this NPM script to your `package.json` file:
+
+```js
+{
+    // ...
+    "scripts": {
+        // ...
+        "watch": "npm run watch-ts & npm run serve-dev",
+        "serve-dev": "./node_modules/.bin/nodemon dist/index.js",
+        // ...
+    }
+}
+```
+
+This will:
+- Run the `watch-ts` and `serve-dev` in parallel
+- `serve-dev` will detect changes to `dist/index.js` and the files it references and reload the running app whenever a change is made, which occurs whenever `watch-ts` rebuilds the `.ts` files.
+
+ℹ️ At the time of writing, pressing <kbd>control</kbd> + <kbd>C</kbd> will stop both processes but return an `errno 130`. This is innocuous, and is a temporary issue. See [here](https://github.com/remy/nodemon/issues/1390) for more details.
 
 ## Create a POST request
 
@@ -897,13 +933,13 @@ Create the POST request handler in `MoviesController.ts`:
 
 export async function postMovie(req: Request, res: Response) {
     try {
-	// Create the new movie using the JSON data from the request body
-    	const newMovie = new Movie(req.body);
-	
-    	// Persist the movie to the database
+        // Create the new movie using the JSON data from the request body
+        const newMovie = new Movie(req.body);
+
+        // Persist the movie to the database
         const savedMovie = await newMovie.save();
 
-	// Respond with the persisted data
+        // Respond with the persisted data
         return res.json(savedMovie);
     } catch (ex) {
     	// Catch any validation errors

@@ -4,9 +4,7 @@ import { Schema, model } from 'mongoose';
 const MovieSchema = new Schema({
     title: {
         type: String,
-        required: true,
-        // Specifies that the title should be used as a MongoDB text index
-        text: true
+        required: true
     },
     releaseDate: Date,
     genre: String,

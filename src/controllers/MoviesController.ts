@@ -56,11 +56,16 @@ export async function getMovie(
 
 export async function postMovie(req: Request, res: Response) {
     try {
+        // Create the new movie using the JSON data from the request body
         const newMovie = new Movie(req.body);
+
+        // Persist the movie to the database
         const savedMovie = await newMovie.save();
 
+        // Respond with the persisted data
         return res.json(savedMovie);
     } catch (ex) {
+        // Catch any validation errors
         return res.status(400).send(ex.message);
     }
 }
