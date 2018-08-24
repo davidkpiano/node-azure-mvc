@@ -900,6 +900,8 @@ This will:
 
 ℹ️ At the time of writing, pressing <kbd>control</kbd> + <kbd>C</kbd> will stop both processes but return an `errno 130`. This is innocuous, and is a temporary issue. See [here](https://github.com/remy/nodemon/issues/1390) for more details.
 
+Run the app in watch mode via `npm run watch` to prevent having to manually rebuild the app.
+
 ## Create a POST request
 
 Let's work with the actual database and persist some data into it. Here's the plan:
@@ -914,8 +916,8 @@ Express includes middleware for handling requests with the header `Content-Type:
 
 ```ts
 // src/index.ts
-
 // ...
+
 app.set('view engine', 'jsx');
 app.engine('jsx', require('express-react-views').createEngine());
 
@@ -958,7 +960,7 @@ And then create the route in `MoviesRouter.ts`:
 moviesRouter.post('/new', moviesController.postMovie);
 ```
 
-Build and run the app. Using [Postman](https://www.getpostman.com/) or [cURL](https://curl.haxx.se/), make a POST request with:
+Using [Postman](https://www.getpostman.com/) or [cURL](https://curl.haxx.se/), make a POST request with:
 
 - Headers: `Content-Type: application/json`
 - Body: any sample movie data that fits the `Movie` model schema:
@@ -1004,16 +1006,24 @@ When creating a [document in MongoDB](http://mongoosejs.com/docs/documents.html)
 // src/controllers/MoviesController.ts
 // ...
 
-export async function getMovie(req: Request, res: Response) {
-    const { id } = req.params;
+export async function getMovie(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    try {
+        const { id } = req.params;
 
-    const movie = await Movie.findById(id).exec();
+        const movie = await Movie.findById(id).exec();
 
-    if (!movie) {
-        return res.status(404);
+        if (!movie) {
+            return res.status(404).send('Movie not found');
+        }
+
+        return res.json(movie);
+    } catch (e) {
+        next(e);
     }
-
-    return res.json(movie);
 }
 
 // ...
@@ -1029,7 +1039,25 @@ moviesRouter.get('/:id', moviesController.getMovie);
 // ...
 ```
 
-You can build/run the app, make a `POST /movies/` request to create a movie, get its ID, and verify that the `GET /movies/:id` endpoint is working.
+You can make a `POST /movies/` request to create a movie, get its ID, and verify that the `GET /movies/:id` endpoint is working. Keep in mind that this route expects a JSON body. We can add middleware to the router to ensure that this is the case:
+
+```ts
+// src/routers/MoviesRouter.ts
+// Create a new router to handle /movies routes
+const moviesRouter = Router();
+
+// Ensure that POST, PUT, and PATCH methods only accept Content-Type: application/json bodies
+moviesRouter.use((req, res, next) => {
+    if (
+        ['POST', 'PUT', 'PATCH'].indexOf(req.method) !== -1 &&
+        !req.is('json')
+    ) {
+        return res.status(415).send('Content-Type must be application/json');
+    }
+
+    return next();
+});
+```
 
 ## Deploy to Azure
 
@@ -1083,7 +1111,7 @@ az webapp create \
 
 Using Cosmos DB, we can interface with a database instance with the MongoDB API. This is done by specifying the `--kind MongoDB` argument. Create a database with a globally unique name. Grab a coffee, because this might take a while. https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-nodejs-mongodb-app#create-a-cosmos-db-account
 
-⚠️ The database name has to be globally unique and lowercase.
+⚠️ The database name has to be globally unique and lowercase. Don't use `globally-unique-movies`, I'm already using it.
 
 ```bash
 az cosmosdb create \
@@ -1099,6 +1127,36 @@ az cosmosdb list-keys --name globally-unique-movies --resource-group moviesResou
 ```
 
 The linked tutorial stores the production-specific environment variables locally; however, this is not recommended. Instead, you should be using Azure itself to manage production environment variables, and only keeping local environment variables locally.
+
+### Add deployment script
+
+There's an important non-obvious step that must be done for this Node app to deploy successfully. We need to create two files:
+
+- `.deployment` - Contains the Azure deployment config
+- `deploy.sh` - The actual script to run upon deployment
+
+These files are automatically generated with the Azure-CLI `deploymentscript` command:
+
+```bash
+azure site deploymentscript --node
+```
+
+When these files are generated, open `deploy.sh`. You'll see all the fun stuff that's happening to succesfully deploy the Node project, but we need to add one thing. Go to step 3:
+
+```sh
+# deploy.sh
+# ...
+
+# 3. Install npm packages
+if [ -e "$DEPLOYMENT_TARGET/package.json" ]; then
+  cd "$DEPLOYMENT_TARGET"
+  eval $NPM_CMD install --production
+  eval $NPM_CMD run build-ts # << Add this line
+  exitWithMessageOnError "npm failed"
+  cd - > /dev/null
+fi
+
+
 
 ### Configuring environment variables
 
