@@ -745,7 +745,11 @@ import { connect } from 'mongoose';
 // Connect the database
 // We'll remove the hardcoded URL later.
 const mongoUrl = 'mongodb://127.0.0.1:27017/moviesapp';
-connect(mongoUrl)
+connect(
+    mongoUrl,
+    // Make sure to include these settings:
+    { useNewUrlParser: true, dbName: 'movies' } 
+)
     .then(() => {
         console.log('Connected to MongoDB');
     })
@@ -847,17 +851,25 @@ dotenv.config();
 
 // Connect the database
 // Notice how we got rid of the hardcoded URL:
-connect(process.env.MONGODB_URL)
+connect(
+    process.env.MONGODB_URL,
+    { useNewUrlParser: true, dbName: 'movies' }
+)
     .then(() => {
         console.log('Connected to MongoDB');
     })
     .catch(err => {
-        console.log('MongoDB connection error.');
+        console.log(
+            `MongoDB connection error - could not connect to ${
+                process.env.MONGODB_URL
+            }`
+        );
+        console.error(err);
     });
     
 // ...
 
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 
 app.listen(process.env.PORT, () => {
     console.log(`Listening on port ${port}: http://localhost:${port}`);
@@ -1141,7 +1153,7 @@ These files are automatically generated with the Azure-CLI `deploymentscript` co
 azure site deploymentscript --node
 ```
 
-When these files are generated, open `deploy.sh`. You'll see all the fun stuff that's happening to succesfully deploy the Node project, but we need to add one thing. Go to step 3:
+When these files are generated, open `deploy.sh`. You'll see all the fun stuff that's happening to succesfully deploy the Node project, but we need to add one thing. Go to step 3 and add `eval $NPM_CMD run build-ts`:
 
 ```sh
 # deploy.sh
@@ -1155,7 +1167,18 @@ if [ -e "$DEPLOYMENT_TARGET/package.json" ]; then
   exitWithMessageOnError "npm failed"
   cd - > /dev/null
 fi
+```
 
+This is so that TypeScript can compile the `.ts` files into `.js` files, output to the `dist/` folder (remember: this is `.gitignore`-d).
+
+Finally, in order to make [Kudu](https://github.com/projectkudu/kudu/wiki) happy, add a `server.js` to the root of the project that points directly to the compiled `dist/index.js` file:
+
+```js
+// server.js
+require('./dist/index.js');
+```
+
+This is because [Kudu](https://github.com/projectkudu/kudu/wiki) looks for a root `server.js` or `app.js` file to generate a `web.config`, which tells the IIS Server how to serve the app.
 
 
 ### Configuring environment variables
@@ -1191,4 +1214,16 @@ az webapp deployment user set --user-name <username> --password <password>
 We will use Git to deploy the app, using the `deploymentLocalGitUrl` from the `az webapp create` step:
 
 > https://<username>@<appname>.scm.azurewebsites.net/<appname>.git
+
+Create a new remote URL for the above local Git URL:
+
+```bash
+git remote add azure <URL above>
+```
+
+This will let you deploy the app to Azure just by running:
+
+```bash
+git push azure head
+```
 

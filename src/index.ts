@@ -15,12 +15,12 @@ connect(
         console.log('Connected to MongoDB');
     })
     .catch(err => {
-        console.error(err);
         console.log(
             `MongoDB connection error - could not connect to ${
                 process.env.MONGODB_URL
             }`
         );
+        console.error(err);
     });
 
 // Creates a new Express app instance
