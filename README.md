@@ -252,12 +252,14 @@ In `package.json`, add the following scripts:
     "scripts": {
         "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
-        "build-ts": "tsc",
-        "watch-ts": "tsc --watch",
+        "build-ts": "./node_modules/.bin/tsc",
+        "watch-ts": "./node_modules/.bin/tsc --watch",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
 ...
 ```
+
+Note that we specify `./node_modules/.bin/tsc --watch` instead of just `tsc --watch` to prevent any binary path resolution issues in Azure.
 
 To break these down:
 - `npm run start` (or just `npm start`) will run `npm run build-ts` and then `npm run serve` once that completes...
@@ -836,7 +838,7 @@ MONGODB_URL=mongodb://127.0.0.1:27017/moviesapp
 Install `dotenv` and its types:
 
 ```bash
-npm install dotenv --save && npm install @types/dotenv --save-dev
+npm install dotenv @types/dotenv --save
 ```
 
 And initialize `dotenv` in `index.ts` (this is [straight from the readme](https://www.npmjs.com/package/dotenv#usage)):
