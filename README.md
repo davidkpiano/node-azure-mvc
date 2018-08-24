@@ -30,6 +30,8 @@ There's two types of dependencies:
   - To install and save a devDependency, `npm install some-dependency --save-dev`
   - (or `npm i some-dependency -D` for short)
 
+We will be installing most dependencies as normal dependencies, so that we can use Azure to build the app as part of the deployment process.
+
 More info:
 - https://docs.npmjs.com/files/package.json
 
@@ -70,10 +72,10 @@ npm install express --save
 
 [Express](https://expressjs.com/) is the most popular minimalist web framework for Node apps, and you will see many Node apps authored either in Express or variants of Express, such as [Koa](https://koajs.com/) or [Nest](https://nestjs.com/).
 
-Now install TypeScript and the Express types as devDependencies (since they are not required to run the app):
+Now install TypeScript and the Express types:
 
 ```bash
-npm install typescript @types/express --save-dev
+npm install typescript @types/express --save
 ```
 
 The `@types/express` package adds the proper typings for `express`, so that it can be strongly typed and work with Intellisense even though it's written in JavaScript.
@@ -112,18 +114,16 @@ Here's what our overall folder structure will look like:
 ```
 src/
 ├─ controllers/
-│  ├─ MoviesController.ts
-|  └─ GoatsController.ts
+|  └─ MoviesController.ts
 ├─ models/
-│  ├─ MovieModel.ts
-|  └─ GoatModel.ts
+|  └─ Movie.ts
 ├─ routers/
-│  ├─ MoviesRouter.ts
-|  └─ GoatsRouter.ts
+|  └─ MoviesRouter.ts
 ├─ views/
-│  ├─ index.pug
-│  ├─ users.pug
-|  └─ goats.pug
+│  ├─ layouts
+|  |  └─ base.tsx
+│  └─ movies
+|     └─ index.tsx
 └─ index.ts
 ```
 
@@ -215,7 +215,7 @@ app.listen(5000, () => {
 });
 ```
 
-You'll notice that the above TS code is almost the same as the normal JS code, thanks to type inference.
+You'll notice that the above TS code is almost the same as the normal JS code, thanks to type inference. We'll make the port configurable later.
 
 ### Running the App
 
@@ -250,7 +250,7 @@ In `package.json`, add the following scripts:
 ```json
 ...
     "scripts": {
-        "start": "npm run serve",
+        "start": "npm run build-ts && npm run serve",
         "serve": "node dist/index.js",
         "build-ts": "tsc",
         "watch-ts": "tsc --watch",
@@ -260,15 +260,15 @@ In `package.json`, add the following scripts:
 ```
 
 To break these down:
-- `npm run start` (or just `npm start`) will run `npm run serve`...
+- `npm run start` (or just `npm start`) will run `npm run build-ts` and then `npm run serve` once that completes...
 - `npm run serve` will serve the compiled JS app via `node`
 - `npm run build-ts` will compile the TS files via `tsc`
 - `npm run watch-ts` can be used in development to automatically compile the TS files whenever the files change
-- `npm run test` (or just `npm test`) is not specified yet, but will be used to run tests
+- `npm run test` (or just `npm test`) is not specified yet, but will be used to run the unit/E2E tests
 
 Now, you can run the below command to run your Node app:
 ```bash
-npm run build-ts && npm start
+npm start
 ```
 
 ## Add a controller
