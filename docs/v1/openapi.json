@@ -1,0 +1,24 @@
+{
+    "openapi": "3.0",
+    "servers": [
+        {
+            "url": "https://localhost:{port}/{basePath}",
+            "description": "The local server",
+            "variables": {
+                "port": {
+                    "default": "5000"
+                },
+                "basePath": {
+                    "default": "v1"
+                }
+            }
+        }
+    ],
+    "info": {
+      "title": "Node Azure MVC API",
+      "version": "1.0.0"
+    },
+    "paths": {
+        
+    }
+  }

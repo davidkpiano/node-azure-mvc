@@ -4,6 +4,8 @@ import * as path from 'path';
 import { connect } from 'mongoose';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
+import * as OpenAPI from 'express-openapi';
+import { readFileSync } from 'fs';
 
 dotenv.config();
 
@@ -25,6 +27,16 @@ connect(
 
 // Creates a new Express app instance
 const app = express();
+
+// Initializes OpenAPI
+OpenAPI.initialize({
+    app,
+    apiDoc: JSON.parse(
+        readFileSync(path.join(__dirname, '../docs/v1/openapi.json'), 'utf-8')
+    ),
+    paths: [],
+    exposeApiDocs: true
+});
 
 // Allow CORS
 app.use(cors());
