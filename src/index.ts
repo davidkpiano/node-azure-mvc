@@ -29,14 +29,13 @@ connect(
 const app = express();
 
 // Initializes OpenAPI
-OpenAPI.initialize({
-    app,
-    apiDoc: JSON.parse(
-        readFileSync(path.join(__dirname, '../docs/v1/openapi.json'), 'utf-8')
-    ),
-    paths: [],
-    exposeApiDocs: true
-});
+// OpenAPI.initialize({
+//     app,
+//     apiDoc: JSON.parse(
+//         readFileSync(path.join(__dirname, '../docs/v1/openapi.json'), 'utf-8')
+//     ),
+//     paths: []
+// });
 
 // Allow CORS
 app.use(cors());
@@ -50,7 +49,7 @@ app.engine('jsx', require('express-react-views').createEngine());
 app.use(express.json());
 
 // Handles /movies routes
-app.use('/movies', moviesRouter);
+app.use('/movies', cors(), moviesRouter);
 
 // app.use('/', (req, res) => res.send('Hello world from index!'));
 
